@@ -43,7 +43,7 @@ JoinTables.belongsTo(Movie, { foreignKey: 'movieId' })
 JoinTables.belongsTo(Director, { foreignKey: 'directorId' })
 JoinTables.belongsTo(Genre, { foreignKey: 'genreId' })
 
-// Exporting models
+
 module.exports = {
     JoinTables,
     Director,

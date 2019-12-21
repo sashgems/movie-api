@@ -1,35 +1,42 @@
 const express = require('express')
+// Model imports
 const models = require('./models')
 const bodyParser = require('body-parser')
+// Allows use of Sequelize operators
 const Op = require('sequelize').Op
 const http_port = 1337;
+// References Express app objects
 const app = express()
+
+// Uses body-parser throughout whole document
 app.use(bodyParser.json());
 
 
+// GET handle to return all movies
 app.get('/movies', (request, response) => {
+
     models.Movie.findAll({
         attributes: ["id", "title", "releaseDate", "rating", "runTime"],
-        include: [{ attributes: ['id', 'name'], model: models.Director,
-            // Ignore attributes of join table
+        include: [{
+            attributes: ['id', 'name'],
+            model: models.Director,
+            // Ignoring attributes of join table
             through: { attributes: [] },
         }, {
             attributes: ['id', 'name'],
             model: models.Genre,
             through: { attributes: [] },
         }],
-     }).then((movies) => { 
+     }).then((movies) => {   // <---  if no async or await
         response.send(movies)
     })
 
 })
 
-// Single movie by ID number
-app.get('/movies/:movieId', async (request, response) => {
-    // Reference data to access :movieId => http:.../movies/65
+// GET request for a single movie by ID number
+app.get('/movies/:x', async (request, response) => {
     const { movieId } = request.params
-    /* Finding a match where ID number corresponds to movies.id 
-       Including model attributes */
+    
     const match = await models.Movie.findAll({
         where: { id: movieId },
         attributes: ["id", "title", "releaseDate", "rating", "runTime"],
@@ -43,37 +50,11 @@ app.get('/movies/:movieId', async (request, response) => {
             through: { attributes: [] },
         }]
     })
-    // Show match if match
+    // If there's a match, show it
     if (match) {
         response.send(match)
     } else {
         response.status(404).send('Please provide a valid ID to look up movie.')
-    }
-})
-
-// Directors by ID number
-app.get('/directors/:directorId', async (request, response) => {
-    const { directorId } = request.params
-    /* Finding a match where ID number corresponds to directors.id 
-       Including model attributes */
-    const match = await models.Director.findAll({
-        where: { id: directorId },
-        attributes: ['id', 'name'],
-        include: [{
-            attributes: ["id", "title", "releaseDate", "rating", "runTime"],
-            model: models.Movie,
-            through: { attributes: [] },
-            // Nested genres model so they will not show separately
-            include: [{ model: models.Genre, 
-                         attributes: ['id', 'name'], 
-                         through: { attributes: [] }}]
-        }]
-    })
-    
-    if (match) {
-        response.send(match)
-    } else {
-        response.status(404).send('Please provide a valid ID to look up director.')
     }
 })
 
@@ -91,7 +72,7 @@ app.get('/genres/:genreName', async (request, response) => {
                          through: { attributes: [] } } ]
         }]
     })
-    // If there's a match, we waant to see it
+    // If there's a match, show it
     if (match) {
         response.send(match)
     } else {
@@ -99,25 +80,21 @@ app.get('/genres/:genreName', async (request, response) => {
     }
 })
 
-// Post a movie
+// POST request to create a movie entry
 app.post('/movies', async (request, response) => {
     // Get request body, and isolate director and genre models from models.Movie
     const { directors, genres, ...restOfBody } = request.body
 
     // If directors, genres or movie info is not included in body, send error message
     if (
-       !restOfBody.title ||
+       !title ||
        !directors ||
-       !restOfBody.releaseDate ||
-       !restOfBody.rating ||
-       !restOfBody.runTime ||
+       !eleaseDate ||
+       !rating ||
+       !runTime ||
        !genres
     ) {
-
-      response.status(400).send('The following attributes of movie are required: title, director(s), release date, rating, run time, and genre(s).') 
-
-    } else {
-     
+       
         // Create new movie
         const newMovie = await models.Movie.create(restOfBody)
 
@@ -125,8 +102,23 @@ app.post('/movies', async (request, response) => {
     }    
 })
 
+// DELETE request by movie ID number
+app.delete('/movies/:movieId', async (request, response) => {
+    const { movieId } = request.params
+    const deleteMovie = await models.Movie.destroy({
+        where: { id: movieId }
+    })
+
+    const deleteJoinEntry = await models.JoinTables.destroy({
+        where: { id: movieId }
+    })
+
+    response.status(202).send("You have successfully deleted all entries.", { deleteMovie, deleteJoinEntry })
+})
+
+// Message to send if page is incorrectly put in
 app.all('*', (request, response) => {
-    response.send('page not found fix address.')
+    response.send('page not found.')
 })
 
 // Message to send if port connection is successfully working

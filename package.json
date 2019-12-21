@@ -4,7 +4,14 @@
   "description": "Great Movies API Instructions In the initial commit to this project, you have been provided with a CSV file that contains data on the American Film Institute's (AFI) Top 100 Movies. Your task is to create a database backed Express API for access the details of these films.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "npm run migrate:dev && npm run server:dev",
+    "migrate:dev": "sequelize db:migrate --env development --config ./config/sequelize.js",
+    "migrate:prod": "sequelize db:migrate --env production --config ./config/sequelize.js",
+    "server:dev": "./node_modules/.bin/nodemon index.js",
+    "server:prod": "node index.js",
+    "start": "npm run migrate:prod && npm server:prod",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "debug": "nodemon --inspect index.js",
   },
   "repository": {
     "type": "git",
@@ -21,7 +28,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "mysql2": "^2.0.2",
-    "sequelize": "^5.21.2",
+    "sequelize": "^5.21.3",
     "sequelize-cli": "^5.5.1"
   },
   "devDependencies": {
